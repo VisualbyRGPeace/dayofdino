@@ -64,6 +64,7 @@ label.chk{display:flex;gap:8px;align-items:center;color:var(--text);font-size:14
 h1{cursor:pointer;transition:opacity .15s}h1:hover{opacity:.65}
 .yh{font-family:'Space Grotesk',Inter,sans-serif;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:8px;cursor:pointer;transition:color .15s}.yh:hover{color:var(--text)}
 [hidden]{display:none!important}
+@media(hover:none){.wheelnote{display:none}}
 @media(max-width:600px){.cell{min-height:64px;padding:3px}.chip{font-size:9px;padding:1px 3px}}
 </style>
 </head>
@@ -73,7 +74,7 @@ h1{cursor:pointer;transition:opacity .15s}h1:hover{opacity:.65}
   <div class="bar">
     <div class="todaytxt">Hôm nay: <b id="todaytxt"></b></div>
     <div class="nav">
-      <button id="acct" title="Đồng bộ bằng Google">☁ Đăng nhập</button>
+      <button id="acct" title="Đồng bộ giữa các thiết bị">☁ Đăng nhập</button>
       <button id="bell" title="Thông báo">🔔<span class="badge" id="badge" hidden></span></button>
       <button id="gear" title="Cài đặt">⚙</button>
       <button id="prev">‹</button><button id="goto">Hôm nay</button><button id="next">›</button>
@@ -81,7 +82,7 @@ h1{cursor:pointer;transition:opacity .15s}h1:hover{opacity:.65}
     </div>
   </div>
   <div id="banner"></div>
-  <div class="note" style="margin:0 0 8px">Lăn chuột trên lịch để chuyển tháng.</div>
+  <div class="note wheelnote" style="margin:0 0 8px">Lăn chuột trên lịch để chuyển tháng.</div>
   <div class="grid" id="grid"></div><div class="ygrid" id="ygrid" hidden></div>
   <h2 id="lh"></h2><div id="lst"></div>
   <h2>Sắp tới</h2><div id="upcoming"></div>
@@ -121,6 +122,15 @@ h1{cursor:pointer;transition:opacity .15s}h1:hover{opacity:.65}
   <label class="chk" style="opacity:.5"><input type="checkbox" disabled> Email (cần máy chủ, chưa có)</label>
   <div class="note">Thông báo được kiểm tra khi trang đang mở hoặc khi bạn mở lại trang. Trang tĩnh không thể đẩy thông báo lúc đã đóng trình duyệt.</div>
   <div class="row"><span class="sp"></span><button class="primary" id="sclose">Xong</button></div>
+</dialog>
+
+<dialog id="adlg">
+  <h3>Đồng bộ giữa các thiết bị</h3>
+  <div class="note" style="margin:0 0 6px">Dùng cùng một email và mật khẩu trên máy tính và điện thoại để dữ liệu tự đồng bộ.</div>
+  <label>Email</label><input type="email" id="aem" autocomplete="email" style="width:100%;font:inherit;font-size:14px;padding:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:0">
+  <label>Mật khẩu (ít nhất 6 ký tự)</label><input type="password" id="apw" autocomplete="current-password" style="width:100%;font:inherit;font-size:14px;padding:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:0">
+  <div class="warn" id="aerr" hidden></div>
+  <div class="row"><button id="asignup">Tạo tài khoản</button><span class="sp"></span><button id="aclose">Đóng</button><button class="primary" id="asignin">Đăng nhập</button></div>
 </dialog>
 
 <script>
@@ -359,10 +369,9 @@ if(location.hash.startsWith('#m-')){const it=S.items.find(i=>'m-'+i.id===locatio
 
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import {getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {initializeAuth,indexedDBLocalPersistence,browserLocalPersistence,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {getFirestore,doc,getDoc,setDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-/* === firebaseConfig CỦA BẠN === */
 const firebaseConfig={
   apiKey:"AIzaSyDrvDSXMpGqFvivC8z6ES3TVHpNSaMF23s",
   authDomain:"data-5f418.firebaseapp.com",
@@ -372,32 +381,53 @@ const firebaseConfig={
   appId:"1:985912551505:web:c0ac18e2a9dcf73f2af070"
 };
 
-const btn=document.getElementById('acct');
-if(!firebaseConfig.apiKey||firebaseConfig.apiKey.startsWith('DÁN')){
-  btn.textContent='☁ Chưa cấu hình';btn.title='Dán firebaseConfig vào index.html để bật đồng bộ';btn.disabled=true;
-}else{
-  const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
-  let user=null,timer=null;
-  const ref=()=>doc(db,'importantDays',user.uid);
-  const push=()=>setDoc(ref(),{json:JSON.stringify(S),updated:Date.now()});
-  async function pull(){
-    if(!user)return;
-    try{
-      const snap=await getDoc(ref()),first=localStorage.getItem('important-days-cloud')!==user.uid;
-      if(snap.exists())applyCloud(JSON.parse(snap.data().json),first);
-      if(!snap.exists()||first)await push();
-      localStorage.setItem('important-days-cloud',user.uid);
-      btn.textContent='☁ '+(user.displayName||user.email||'Đã đồng bộ').split(' ').pop();
-    }catch(e){console.error(e);btn.textContent='☁ Lỗi đồng bộ';btn.title=String(e.code||e.message)}
-  }
-  window.cloud={save(){if(!user)return;clearTimeout(timer);timer=setTimeout(()=>push().catch(e=>{console.error(e);btn.textContent='☁ Lỗi đồng bộ'}),800)}};
-  onAuthStateChanged(auth,u=>{user=u;if(u)pull();else btn.textContent='☁ Đăng nhập'});
-  btn.onclick=async()=>{
-    if(user){if(confirm('Đăng xuất? Dữ liệu vẫn được giữ trên đám mây và trong máy này.'))signOut(auth);return}
-    try{await signInWithPopup(auth,new GoogleAuthProvider())}catch(e){alert('Đăng nhập không thành công: '+(e.code||e.message))}
-  };
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
+const $$=id=>document.getElementById(id),btn=$$('acct');
+const app=initializeApp(firebaseConfig),
+  auth=initializeAuth(app,{persistence:[indexedDBLocalPersistence,browserLocalPersistence]}),
+  db=getFirestore(app);
+let user=null,timer=null;
+const ref=()=>doc(db,'importantDays',user.uid);
+const push=()=>setDoc(ref(),{json:JSON.stringify(S),updated:Date.now()});
+async function pull(){
+  if(!user)return;
+  try{
+    const snap=await getDoc(ref()),first=localStorage.getItem('important-days-cloud')!==user.uid;
+    if(snap.exists())applyCloud(JSON.parse(snap.data().json),first);
+    if(!snap.exists()||first)await push();
+    localStorage.setItem('important-days-cloud',user.uid);
+    btn.textContent='☁ Đã đồng bộ';btn.title=user.email;
+  }catch(e){console.error(e);btn.textContent='☁ Lỗi: '+(e.code||e.message);btn.title=String(e.code||e.message)}
 }
+window.cloud={save(){if(!user)return;clearTimeout(timer);timer=setTimeout(()=>push().catch(e=>{console.error(e);btn.textContent='☁ Lỗi: '+(e.code||e.message);btn.title=String(e.code||e.message)}),800)}};
+onAuthStateChanged(auth,u=>{user=u;if(u)pull();else{btn.textContent='☁ Đăng nhập';btn.title='Đồng bộ giữa các thiết bị'}});
+
+const MSG={
+  'auth/invalid-credential':'Sai email hoặc mật khẩu.',
+  'auth/wrong-password':'Sai email hoặc mật khẩu.',
+  'auth/user-not-found':'Chưa có tài khoản này. Bấm "Tạo tài khoản".',
+  'auth/email-already-in-use':'Email này đã có tài khoản. Bấm "Đăng nhập".',
+  'auth/weak-password':'Mật khẩu cần ít nhất 6 ký tự.',
+  'auth/invalid-email':'Email không hợp lệ.',
+  'auth/missing-password':'Hãy nhập mật khẩu.',
+  'auth/network-request-failed':'Không có mạng, thử lại sau.',
+  'auth/too-many-requests':'Thử quá nhiều lần, hãy đợi một lúc.',
+  'auth/operation-not-allowed':'Chưa bật đăng nhập Email/Password trong Firebase.'
+};
+async function go(fn){
+  const err=$$('aerr');err.hidden=true;
+  try{await fn(auth,$$('aem').value.trim(),$$('apw').value);$$('apw').value='';$$('adlg').close()}
+  catch(e){err.textContent=MSG[e.code]||('Lỗi: '+(e.code||e.message));err.hidden=false}
+}
+$$('asignin').onclick=()=>go(signInWithEmailAndPassword);
+$$('asignup').onclick=()=>go(createUserWithEmailAndPassword);
+$$('aclose').onclick=()=>$$('adlg').close();
+$$('apw').addEventListener('keydown',e=>{if(e.key==='Enter')go(signInWithEmailAndPassword)});
+btn.onclick=()=>{
+  if(user){if(confirm('Đăng xuất '+user.email+'? Dữ liệu vẫn được giữ trên đám mây và trong máy này.'))signOut(auth);return}
+  $$('aerr').hidden=true;$$('adlg').showModal();
+};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 </script>
+
 </body>
 </html>
