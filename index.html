@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ngày trọng đại</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff;--text:#111;--muted:#777;--line:#222;--soft:#f3f3f3;--accent:#111}
+@media (prefers-color-scheme:dark){:root{--bg:#131313;--text:#f2f2f2;--muted:#999;--line:#555;--soft:#1f1f1f;--accent:#f2f2f2}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Arial,sans-serif}
+h1,.year,h2,dialog h3,.c,.bn{font-family:'Space Grotesk',Inter,system-ui,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:24px 16px 60px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:8px}
+h1{margin:0;font-weight:700;font-size:clamp(32px,7vw,64px);text-transform:uppercase;line-height:1}
+.year{font-size:clamp(28px,6vw,56px);font-weight:500;line-height:1}
+.bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin:14px 0}
+.todaytxt{color:var(--muted);font-size:14px}.todaytxt b{color:var(--text)}
+.nav{display:flex;gap:6px;flex-wrap:wrap}
+button{font:inherit;font-size:13px;padding:7px 12px;border:1px solid var(--line);background:none;color:var(--text);cursor:pointer;border-radius:0;position:relative}
+button:hover{background:var(--soft)}
+button.primary{background:var(--accent);color:var(--bg)}
+.badge{position:absolute;top:-7px;right:-7px;background:#d33;color:#fff;font-size:10px;min-width:16px;height:16px;line-height:16px;border-radius:8px;text-align:center;padding:0 4px}
+.banner{border:1px solid var(--line);padding:14px 16px;margin-bottom:16px;background:var(--soft)}
+.banner .bl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.banner .bn{font-size:22px;font-weight:600;margin:4px 0 6px}
+.banner .bi{cursor:pointer;padding:2px 0;font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.dow{padding:8px 0;text-align:center;font-size:13px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.cell{min-height:96px;padding:6px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);cursor:pointer;overflow:hidden;min-width:0}
+.cell:hover{background:var(--soft)}.cell.blank{cursor:default;background:none}
+.num{font-size:13px;color:var(--muted);display:inline-block;min-width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%}
+.cell.today .num{background:var(--accent);color:var(--bg)}
+.chip{display:block;margin-top:3px;padding:2px 5px;font-size:11px;background:var(--soft);border-left:3px solid var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip:hover{background:var(--line);color:var(--bg)}
+h2{font-size:14px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin:32px 0 10px}
+.up,.nrow{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--soft);cursor:pointer}
+.d{color:var(--muted);font-size:13px}.c{white-space:nowrap;font-weight:600}
+.tools{margin-top:28px;display:flex;gap:8px;flex-wrap:wrap}
+dialog{border:1px solid var(--line);background:var(--bg);color:var(--text);padding:20px;width:min(400px,92vw);max-height:88vh}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog h3{margin:0 0 12px;font-weight:600}
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+input[type=text],input[type=date],textarea,select{width:100%;font:inherit;font-size:14px;padding:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:0}
+label.chk{display:flex;gap:8px;align-items:center;color:var(--text);font-size:14px;margin:6px 0}
+.rems{display:flex;flex-wrap:wrap;gap:4px 14px}
+.row{display:flex;gap:8px;margin-top:16px}.sp{flex:1}
+.nrow.unread .t{font-weight:600}.nrow.unread:before{content:'';width:8px;height:8px;border-radius:50%;background:#d33;margin-top:6px;flex:none}
+.ng{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:14px 0 2px}
+.warn{color:#d33;font-size:13px;margin-top:6px}.note{color:var(--muted);font-size:12px;margin-top:6px}
+.ygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px}
+.mini{border:1px solid var(--line);padding:8px;cursor:pointer}.mini:hover{background:var(--soft)}
+.mini .mt{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;text-transform:uppercase;margin-bottom:4px}
+.mg{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:10px;row-gap:2px}
+.mg span{height:20px;line-height:20px}.mg .h{color:var(--muted)}
+.mg .ev{font-weight:700;background:var(--accent);color:var(--bg);border-radius:50%}
+.mg .td{outline:1px solid var(--accent);outline-offset:1px;border-radius:50%}
+.lrow{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--soft);cursor:pointer;font-size:14px}.lrow .dt{width:56px;color:var(--muted);flex:none}
+.zin{animation:zin .3s ease}.zout{animation:zout .3s ease}
+@keyframes zin{from{transform:scale(1.12);opacity:0}}@keyframes zout{from{transform:scale(.88);opacity:0}}
+[hidden]{display:none!important}
+@media(max-width:600px){.cell{min-height:64px;padding:3px}.chip{font-size:9px;padding:1px 3px}}
+</style>
+</head>
+<body>
+<main>
+  <header><h1 id="mname"></h1><div class="year" id="yname"></div></header>
+  <div class="bar">
+    <div class="todaytxt">Hôm nay: <b id="todaytxt"></b></div>
+    <div class="nav">
+      <button id="bell" title="Thông báo">🔔<span class="badge" id="badge" hidden></span></button>
+      <button id="gear" title="Cài đặt">⚙</button>
+      <button id="mode" title="Xem cả năm">Năm</button><button id="prev">‹</button><button id="goto">Hôm nay</button><button id="next">›</button>
+      <button class="primary" id="add">+ Thêm</button>
+    </div>
+  </div>
+  <div id="banner"></div>
+  <div class="note" style="margin:0 0 8px">💡 Lăn chuột xuống trên lịch để xem cả năm, lăn lên để quay lại từng tháng.</div>
+  <div class="grid" id="grid"></div><div class="ygrid" id="ygrid" hidden></div>
+  <h2 id="lh"></h2><div id="lst"></div>
+  <h2>Sắp tới</h2><div id="upcoming"></div>
+  <div class="tools">
+    <button id="export">Sao lưu (tải file)</button><button id="import">Khôi phục từ file</button>
+    <input type="file" id="file" accept=".json" hidden>
+  </div>
+</main>
+
+<dialog id="dlg">
+  <h3 id="dtitle"></h3>
+  <label>Biểu tượng</label>
+  <select id="e"><option>📌</option><option>🎂</option><option>❤️</option><option>💍</option><option>✈️</option><option>🎉</option><option>🎓</option><option>⭐</option></select>
+  <label>Tên</label><input type="text" id="t" placeholder="Sinh nhật mẹ">
+  <label>Ngày</label><input type="date" id="d">
+  <label class="chk"><input type="checkbox" id="r" checked> Lặp lại hằng năm</label>
+  <label>Nhắc tôi</label>
+  <div class="rems" id="rems"></div>
+  <label>Ghi chú</label><textarea id="n" rows="2"></textarea>
+  <div class="row"><button id="del">Xoá</button><span class="sp"></span><button id="cancel">Huỷ</button><button class="primary" id="save">Lưu</button></div>
+</dialog>
+
+<dialog id="ndlg">
+  <h3>Thông báo</h3><div id="nlist"></div>
+  <div class="row"><button id="readall">Đánh dấu đã đọc tất cả</button><span class="sp"></span><button id="nclose">Đóng</button></div>
+</dialog>
+
+<dialog id="sdlg">
+  <h3>Cài đặt thông báo</h3>
+  <label class="chk"><input type="checkbox" id="son"> Thông báo trình duyệt</label>
+  <div class="warn" id="swarn" hidden></div>
+  <label>Nhắc mặc định cho ngày mới</label>
+  <select id="sdef"><option value="-1">Không nhắc</option><option value="0">Đúng ngày</option><option value="1">Trước 1 ngày</option><option value="3">Trước 3 ngày</option><option value="7">Trước 7 ngày</option><option value="30">Trước 30 ngày</option></select>
+  <label>Giờ nhận thông báo</label>
+  <select id="stime"><option value="7">07:00</option><option value="8">08:00</option><option value="9">09:00</option><option value="12">12:00</option><option value="18">18:00</option></select>
+  <div class="note" id="stz"></div>
+  <label class="chk" style="opacity:.5"><input type="checkbox" disabled> Email (cần máy chủ, chưa có)</label>
+  <div class="note">Thông báo được kiểm tra khi trang đang mở hoặc khi bạn mở lại trang. Trang tĩnh không thể đẩy thông báo lúc đã đóng trình duyệt.</div>
+  <div class="row"><span class="sp"></span><button class="primary" id="sclose">Xong</button></div>
+</dialog>
+
+<script>
+const KEY='important-days-v3',$=id=>document.getElementById(id);
+const MONTHS=['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+const DOW=['CN','T2','T3','T4','T5','T6','T7'];
+const REM=[[0,'Đúng ngày'],[1,'Trước 1 ngày'],[3,'3 ngày'],[7,'7 ngày'],[30,'30 ngày']];
+let S={items:[],notifs:[],sent:{},set:{}};
+try{const r=JSON.parse(localStorage.getItem(KEY));if(r)S=Object.assign(S,r);else{const o=JSON.parse(localStorage.getItem('important-days-v2'));if(Array.isArray(o))S.items=o}}catch(e){}
+S.set=Object.assign({on:false,def:1,time:8},S.set);
+const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+
+const pad=n=>String(n).padStart(2,'0'),iso=(y,m,d)=>y+'-'+pad(m+1)+'-'+pad(d);
+const parse=s=>{const[y,m,d]=s.split('-').map(Number);return{y,m:m-1,d}};
+const isLeap=y=>(y%4===0&&y%100!==0)||y%400===0;
+const sod=d=>new Date(d.getFullYear(),d.getMonth(),d.getDate());
+const dIn=(o,y)=>(o.m===1&&o.d===29&&!isLeap(y))?28:o.d;
+function occursOn(it,y,m,d){const o=parse(it.date);return it.repeat?(y>=o.y&&o.m===m&&dIn(o,y)===d):(o.y===y&&o.m===m&&o.d===d)}
+function nextOcc(it,t){const o=parse(it.date),f=new Date(o.y,o.m,o.d);
+  if(!it.repeat)return f>=t?f:null;
+  for(let y=Math.max(t.getFullYear(),o.y);y<=t.getFullYear()+1;y++){const n=new Date(y,o.m,dIn(o,y));if(n>=t&&n>=f)return n}return null}
+const left=(n,t)=>Math.round((n-t)/864e5);
+const label=d=>d===0?'Hôm nay':d===1?'Ngày mai':'Còn '+d+' ngày';
+const full=d=>d.toLocaleDateString('vi-VN',{weekday:'long',day:'numeric',month:'numeric',year:'numeric'});
+const ico=it=>it.emoji||'📌';
+
+/* ---- Nhắc & thông báo ---- */
+function msg(it,d){return d===0?'Hôm nay là '+it.title+'.':d===1?it.title+' là ngày mai.':it.title+' sẽ đến sau '+d+' ngày.'}
+function check(seed,only){
+  const now=new Date(),t=sod(now);let ch=false;
+  (only?[only]:S.items).forEach(it=>{
+    const n=nextOcc(it,t);if(!n)return;let due=0;
+    (it.reminders||[]).forEach(o=>{
+      const at=new Date(n.getFullYear(),n.getMonth(),n.getDate()-o,S.set.time),k=it.id+'|'+iso(n.getFullYear(),n.getMonth(),n.getDate())+'|'+o;
+      if(now>=at&&!S.sent[k]){S.sent[k]=1;due++;ch=true}});
+    if(due&&!seed){const d=left(n,t),b=msg(it,d);
+      S.notifs.unshift({id:Date.now()+Math.random(),mid:it.id,body:b,t:Date.now(),read:false});
+      S.notifs=S.notifs.slice(0,100);
+      if(S.set.on&&'Notification'in window&&Notification.permission==='granted'){
+        try{const x=new Notification('Ngày trọng đại',{body:ico(it)+' '+b});x.onclick=()=>{window.focus();openDlg(it);x.close()}}catch(e){}}}
+  });
+  if(ch)persist();
+}
+
+/* ---- Hiển thị ---- */
+let view=new Date();view.setDate(1);
+function render(){
+  const now=new Date(),t=sod(now),y=view.getFullYear(),m=view.getMonth();
+  $('todaytxt').textContent=full(now);$('mname').textContent=MONTHS[m];$('yname').textContent=y;
+  const list=S.items.map(it=>{const n=nextOcc(it,t);return n&&{it,n,d:left(n,t)}}).filter(Boolean).sort((a,b)=>a.d-b.d);
+
+  const bn=$('banner');bn.innerHTML='';
+  if(list.length){
+    const g=list.filter(x=>x.d===list[0].d),e=document.createElement('div');e.className='banner';
+    e.innerHTML='<div class="bl">Ngày quan trọng tiếp theo</div><div class="bn"></div>';
+    e.querySelector('.bn').textContent=(g.length>1?g.length+' ngày trọng đại · ':'')+label(list[0].d);
+    g.forEach(x=>{const r=document.createElement('div');r.className='bi';r.textContent=ico(x.it)+' '+x.it.title;r.onclick=()=>openDlg(x.it);e.appendChild(r)});
+    bn.appendChild(e);
+  }
+
+  const g=$('grid');g.innerHTML='';
+  DOW.forEach(n=>{const e=document.createElement('div');e.className='dow';e.textContent=n;g.appendChild(e)});
+  const lead=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),total=Math.ceil((lead+days)/7)*7;
+  for(let i=0;i<total;i++){
+    const c=document.createElement('div'),d=i-lead+1;
+    if(d<1||d>days){c.className='cell blank';g.appendChild(c);continue}
+    c.className='cell'+(y===t.getFullYear()&&m===t.getMonth()&&d===t.getDate()?' today':'');
+    const num=document.createElement('span');num.className='num';num.textContent=d;c.appendChild(num);
+    S.items.filter(it=>occursOn(it,y,m,d)).forEach(it=>{
+      const ch=document.createElement('span');ch.className='chip';ch.textContent=ico(it)+' '+it.title;ch.title=it.title;
+      ch.onclick=ev=>{ev.stopPropagation();openDlg(it)};c.appendChild(ch)});
+    c.onclick=()=>openDlg(null,iso(y,m,d));g.appendChild(c);
+  }
+
+  const box=$('upcoming');box.innerHTML='';
+  if(!list.length)box.innerHTML='<div class="d">Chưa có ngày nào. Bấm vào một ô trong lịch để thêm.</div>';
+  list.slice(0,8).forEach(({it,n,d})=>{
+    const e=document.createElement('div');e.className='up';
+    e.innerHTML='<div><div class="t"></div><div class="d"></div></div><div class="c"></div>';
+    e.querySelector('.t').textContent=ico(it)+' '+it.title;
+    e.querySelector('.d').textContent=full(n)+(it.repeat?' · hằng năm':'');
+    e.querySelector('.c').textContent=label(d);e.onclick=()=>openDlg(it);box.appendChild(e)});
+
+  const un=S.notifs.filter(x=>!x.read).length;$('badge').hidden=!un;$('badge').textContent=un;
+  extra(t);
+}
+let mode='month';
+function extra(t){
+  const y=view.getFullYear(),m=view.getMonth(),yr=mode==='year';
+  $('grid').hidden=yr;$('ygrid').hidden=!yr;$('mode').textContent=yr?'Tháng':'Năm';
+  if(yr){
+    $('mname').textContent='Cả năm';
+    const yg=$('ygrid');yg.innerHTML='';
+    for(let mm=0;mm<12;mm++){
+      const b=document.createElement('div');b.className='mini';b.dataset.m=mm;
+      const mt=document.createElement('div');mt.className='mt';mt.textContent=MONTHS[mm];b.appendChild(mt);
+      const g=document.createElement('div');g.className='mg';
+      ['C','2','3','4','5','6','7'].forEach(x=>{const e=document.createElement('span');e.className='h';e.textContent=x;g.appendChild(e)});
+      const lead=new Date(y,mm,1).getDay(),dn=new Date(y,mm+1,0).getDate();
+      for(let i=0;i<lead;i++)g.appendChild(document.createElement('span'));
+      for(let d=1;d<=dn;d++){
+        const e=document.createElement('span');e.textContent=d;
+        const ev=S.items.filter(it=>occursOn(it,y,mm,d));
+        if(ev.length){e.className='ev';e.title=ev.map(i=>i.title).join(', ')}
+        if(y===t.getFullYear()&&mm===t.getMonth()&&d===t.getDate())e.className+=' td';
+        g.appendChild(e)}
+      b.appendChild(g);
+      b.onclick=()=>{view=new Date(y,mm,1);setMode('month','in')};
+      yg.appendChild(b)}
+  }
+  const rows=[];
+  for(let mm=yr?0:m;mm<=(yr?11:m);mm++)for(let d=1;d<=new Date(y,mm+1,0).getDate();d++)
+    S.items.forEach(it=>{if(occursOn(it,y,mm,d))rows.push({it,mm,d})});
+  $('lh').textContent=yr?'Sự kiện trong năm '+y:'Sự kiện trong '+MONTHS[m].toLowerCase()+' '+y;
+  const box=$('lst');box.innerHTML='';
+  if(!rows.length)box.innerHTML='<div class="d">Không có sự kiện nào.</div>';
+  rows.forEach(({it,mm,d})=>{
+    const r=document.createElement('div');r.className='lrow';
+    r.innerHTML='<div class="dt"></div><div></div>';
+    r.children[0].textContent=pad(d)+'/'+pad(mm+1);r.children[1].textContent=ico(it)+' '+it.title;
+    r.onclick=()=>openDlg(it);box.appendChild(r)});
+}
+function setMode(mo,dir){
+  mode=mo;render();
+  const el=$(mo==='year'?'ygrid':'grid');
+  el.classList.remove('zin','zout');void el.offsetWidth;el.classList.add(dir==='in'?'zin':'zout');
+}
+let wl=0;
+const wheel=e=>{
+  const up=e.deltaY<0;
+  if((mode==='month'&&!up)||(mode==='year'&&up)){
+    e.preventDefault();
+    const n=Date.now();if(n-wl<450)return;wl=n;
+    if(mode==='year'){const mi=e.target.closest&&e.target.closest('.mini');if(mi)view=new Date(view.getFullYear(),+mi.dataset.m,1)}
+    setMode(mode==='month'?'year':'month',mode==='month'?'out':'in');
+  }
+};
+['grid','ygrid'].forEach(id=>$(id).addEventListener('wheel',wheel,{passive:false}));
+$('mode').onclick=()=>setMode(mode==='year'?'month':'year',mode==='year'?'in':'out');
+
+/* ---- Hộp thoại ngày ---- */
+let editing=null;
+function drawRems(sel){$('rems').innerHTML=REM.map(([v,l])=>'<label class="chk"><input type="checkbox" value="'+v+'"'+(sel.includes(v)?' checked':'')+'> '+l+'</label>').join('')}
+function openDlg(it,date){
+  editing=it;if($('ndlg').open)$('ndlg').close();
+  const n=new Date();
+  $('dtitle').textContent=it?'Sửa ngày trọng đại':'Thêm ngày trọng đại';
+  $('e').value=it?ico(it):'📌';$('t').value=it?it.title:'';
+  $('d').value=it?it.date:(date||iso(n.getFullYear(),n.getMonth(),n.getDate()));
+  $('r').checked=it?it.repeat:true;$('n').value=it?(it.note||''):'';
+  drawRems(it?(it.reminders||[]):(S.set.def>=0?[S.set.def]:[]));
+  $('del').style.display=it?'':'none';
+  if(!$('dlg').open)$('dlg').showModal();
+}
+$('save').onclick=()=>{
+  const title=$('t').value.trim(),date=$('d').value;if(!title||!date){$('t').focus();return}
+  const data={title,date,repeat:$('r').checked,note:$('n').value.trim(),emoji:$('e').value,
+    reminders:[...$('rems').querySelectorAll('input:checked')].map(i=>+i.value)};
+  let it=editing;if(it){Object.assign(it,data)}else{it={id:Date.now(),...data};S.items.push(it)}
+  check(true,it);persist();$('dlg').close();render();
+};
+$('del').onclick=()=>{S.items=S.items.filter(x=>x!==editing);persist();$('dlg').close();render()};
+$('cancel').onclick=()=>$('dlg').close();
+$('add').onclick=()=>openDlg(null);
+
+/* ---- Trung tâm thông báo ---- */
+function drawNotifs(){
+  const box=$('nlist'),t=sod(new Date());box.innerHTML='';
+  if(!S.notifs.length){box.innerHTML='<div class="d">Chưa có thông báo nào.</div>';return}
+  let last='';
+  S.notifs.forEach(x=>{
+    const dd=left(t,sod(new Date(x.t))),g=dd===0?'Hôm nay':dd===1?'Hôm qua':'Trước đó';
+    if(g!==last){const h=document.createElement('div');h.className='ng';h.textContent=g;box.appendChild(h);last=g}
+    const it=S.items.find(i=>i.id===x.mid),r=document.createElement('div');
+    r.className='nrow'+(x.read?'':' unread');
+    r.innerHTML='<div class="sp"><div class="t"></div><div class="d"></div></div>';
+    r.querySelector('.t').textContent=(it?ico(it):'🔔')+' '+x.body;
+    r.querySelector('.d').textContent=new Date(x.t).toLocaleString('vi-VN');
+    r.onclick=()=>{x.read=true;persist();render();if(it)openDlg(it);else drawNotifs()};
+    box.appendChild(r)});
+}
+$('bell').onclick=()=>{drawNotifs();$('ndlg').showModal()};
+$('readall').onclick=()=>{S.notifs.forEach(x=>x.read=true);persist();render();drawNotifs()};
+$('nclose').onclick=()=>$('ndlg').close();
+
+/* ---- Cài đặt ---- */
+function drawSet(){
+  $('son').checked=S.set.on;$('sdef').value=S.set.def;$('stime').value=S.set.time;
+  $('stz').textContent='Múi giờ: '+Intl.DateTimeFormat().resolvedOptions().timeZone;$('swarn').hidden=true;
+}
+$('gear').onclick=()=>{drawSet();$('sdlg').showModal()};
+$('sclose').onclick=()=>$('sdlg').close();
+$('sdef').onchange=e=>{S.set.def=+e.target.value;persist()};
+$('stime').onchange=e=>{S.set.time=+e.target.value;persist();check(false);render()};
+$('son').onchange=async e=>{
+  const w=$('swarn');w.hidden=true;
+  if(!e.target.checked){S.set.on=false;persist();return}
+  const fail=t=>{w.textContent=t;w.hidden=false;e.target.checked=false;S.set.on=false;persist()};
+  if(!('Notification'in window))return fail('Trình duyệt này không hỗ trợ thông báo.');
+  if(Notification.permission==='denied')return fail('Thông báo đang bị chặn trong trình duyệt. Hãy mở cài đặt trình duyệt để bật lại.');
+  if(Notification.permission==='default'){
+    try{const p=await Notification.requestPermission();if(p!=='granted')return fail('Bạn chưa cấp quyền thông báo cho trang này.')}catch(x){return fail('Không thể xin quyền thông báo.')}}
+  S.set.on=true;persist();
+};
+
+/* ---- Điều hướng, sao lưu ---- */
+$('prev').onclick=()=>{mode==='year'?view.setFullYear(view.getFullYear()-1):view.setMonth(view.getMonth()-1);render()};
+$('next').onclick=()=>{mode==='year'?view.setFullYear(view.getFullYear()+1):view.setMonth(view.getMonth()+1);render()};
+$('goto').onclick=()=>{view=new Date();view.setDate(1);render()};
+$('export').onclick=()=>{const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}));a.download='ngay-trong-dai.json';a.click()};
+$('import').onclick=()=>$('file').click();
+$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const o=JSON.parse(r.result);
+    if(Array.isArray(o))S.items=o;else if(o&&Array.isArray(o.items)){S=Object.assign(S,o);S.set=Object.assign({on:false,def:1,time:8},S.set)}
+    else throw 0;persist();check(true);render()}catch(x){alert('File không hợp lệ')}};r.readAsText(f)};
+
+/* ---- Khởi động ---- */
+check(false);render();
+const tick=()=>{check(false);render()};
+setInterval(tick,60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick()});
+if(location.hash.startsWith('#m-')){const it=S.items.find(i=>'m-'+i.id===location.hash.slice(1));if(it)openDlg(it)}
+</script>
+</body>
+</html>
