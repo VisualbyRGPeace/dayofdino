@@ -161,6 +161,16 @@ document.addEventListener('click',e=>{
   if(t.closest('.pk,input[type=checkbox],select,#save,#asignin,#asignup,#readall,#mname,#yhint'))return sfx('tone');
   if(t.closest('button,.cell:not(.blank),.chip,.up,.nrow,.lrow,.bi,.mini'))sfx('click');
 },true);
+/* Rê chuột qua ô bấm được -> click-tone.wav (bỏ qua màn hình cảm ứng) */
+const HOV='button,.cell:not(.blank),.chip,.up,.nrow,.lrow,.bi,.mini,h1,.yh,label.chk,select',CAN_HOVER=matchMedia('(hover:hover)').matches;
+let lastHov=0;
+document.addEventListener('mouseover',e=>{
+  if(!CAN_HOVER||!e.target.closest)return;
+  const t=e.target.closest(HOV);
+  if(!t||t.contains(e.relatedTarget))return;
+  const n=Date.now();if(n-lastHov<60)return;lastHov=n;
+  sfx('tone');
+});
 const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(window.cloud)window.cloud.save()};
 function applyCloud(c,merge){
   const D={on:false,def:1,time:8},on=S.set.on;
