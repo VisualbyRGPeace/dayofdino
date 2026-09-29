@@ -64,6 +64,12 @@ label.chk{display:flex;gap:8px;align-items:center;color:var(--text);font-size:14
 h1{cursor:pointer;transition:opacity .15s}h1:hover{opacity:.65}
 .yh{font-family:'Space Grotesk',Inter,sans-serif;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:8px;cursor:pointer;transition:color .15s}.yh:hover{color:var(--text)}
 [hidden]{display:none!important}
+.ic{width:1.1em;height:1.1em;vertical-align:-.17em;flex:none}
+button .ic{width:16px;height:16px;vertical-align:-3px}
+.pick{display:flex;flex-wrap:wrap;gap:6px}
+.pick .pk{padding:7px 9px;line-height:0}
+.pick .pk .ic{width:20px;height:20px;vertical-align:0}
+.pick .pk.on{background:var(--accent);color:var(--bg)}
 @media(hover:none){.wheelnote{display:none}}
 @media(max-width:600px){.cell{min-height:64px;padding:3px}.chip{font-size:9px;padding:1px 3px}}
 </style>
@@ -95,7 +101,7 @@ h1{cursor:pointer;transition:opacity .15s}h1:hover{opacity:.65}
 <dialog id="dlg">
   <h3 id="dtitle"></h3>
   <label>Biểu tượng</label>
-  <select id="e"><option>📌</option><option>🎂</option><option>❤️</option><option>💍</option><option>✈️</option><option>🎉</option><option>🎓</option><option>⭐</option></select>
+  <div class="pick" id="epick"></div><input type="hidden" id="e" value="📌">
   <label>Tên</label><input type="text" id="t" placeholder="Sinh nhật mẹ">
   <label>Ngày</label><input type="date" id="d">
   <label class="chk"><input type="checkbox" id="r" checked> Lặp lại hằng năm</label>
@@ -170,6 +176,23 @@ const left=(n,t)=>Math.round((n-t)/864e5);
 const label=d=>d===0?'Hôm nay':d===1?'Ngày mai':'Còn '+d+' ngày';
 const full=d=>d.toLocaleDateString('vi-VN',{weekday:'long',day:'numeric',month:'numeric',year:'numeric'});
 const ico=it=>it.emoji||'📌';
+const IC={
+'📌':'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+'🎂':'<path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20M7 8v3M12 8v3M17 8v3M7 4h.01M12 4h.01M17 4h.01"/>',
+'❤':'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+'💍':'<circle cx="12" cy="15" r="6"/><path d="M9 4.5 10.5 2h3L15 4.5 12 8z"/>',
+'✈':'<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
+'🎉':'<path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>',
+'🎓':'<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>',
+'⭐':'<path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>',
+'cloud':'<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>',
+'bell':'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+'gear':'<path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/>'
+};
+const PICK=['📌','🎂','❤️','💍','✈️','🎉','🎓','⭐'];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const icon=k=>'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(IC[String(k).replace(/\uFE0F/g,'')]||IC['📌'])+'</svg>';
+const withIc=(it,t)=>icon(ico(it))+' '+esc(t);
 
 /* ---- Nhắc & thông báo ---- */
 function msg(it,d){return d===0?'Hôm nay là '+it.title+'.':d===1?it.title+' là ngày mai.':it.title+' sẽ đến sau '+d+' ngày.'}
@@ -201,7 +224,7 @@ function render(){
     const g=list.filter(x=>x.d===list[0].d),e=document.createElement('div');e.className='banner';
     e.innerHTML='<div class="bl">Ngày quan trọng tiếp theo</div><div class="bn"></div>';
     e.querySelector('.bn').textContent=(g.length>1?g.length+' ngày trọng đại · ':'')+label(list[0].d);
-    g.forEach(x=>{const r=document.createElement('div');r.className='bi';r.textContent=ico(x.it)+' '+x.it.title;r.onclick=()=>openDlg(x.it);e.appendChild(r)});
+    g.forEach(x=>{const r=document.createElement('div');r.className='bi';r.innerHTML=withIc(x.it,x.it.title);r.onclick=()=>openDlg(x.it);e.appendChild(r)});
     bn.appendChild(e);
   }
 
@@ -214,7 +237,7 @@ function render(){
     c.className='cell'+(y===t.getFullYear()&&m===t.getMonth()&&d===t.getDate()?' today':'');
     const num=document.createElement('span');num.className='num';num.textContent=d;c.appendChild(num);
     S.items.filter(it=>occursOn(it,y,m,d)).forEach(it=>{
-      const ch=document.createElement('span');ch.className='chip';ch.textContent=ico(it)+' '+it.title;ch.title=it.title;
+      const ch=document.createElement('span');ch.className='chip';ch.innerHTML=withIc(it,it.title);ch.title=it.title;
       ch.onclick=ev=>{ev.stopPropagation();openDlg(it)};c.appendChild(ch)});
     c.onclick=()=>openDlg(null,iso(y,m,d));g.appendChild(c);
   }
@@ -224,7 +247,7 @@ function render(){
   list.slice(0,8).forEach(({it,n,d})=>{
     const e=document.createElement('div');e.className='up';
     e.innerHTML='<div><div class="t"></div><div class="d"></div></div><div class="c"></div>';
-    e.querySelector('.t').textContent=ico(it)+' '+it.title;
+    e.querySelector('.t').innerHTML=withIc(it,it.title);
     e.querySelector('.d').textContent=full(n)+(it.repeat?' · hằng năm':'');
     e.querySelector('.c').textContent=label(d);e.onclick=()=>openDlg(it);box.appendChild(e)});
 
@@ -264,7 +287,7 @@ function extra(t){
   rows.forEach(({it,mm,d})=>{
     const r=document.createElement('div');r.className='lrow';
     r.innerHTML='<div class="dt"></div><div></div>';
-    r.children[0].textContent=pad(d)+'/'+pad(mm+1);r.children[1].textContent=ico(it)+' '+it.title;
+    r.children[0].textContent=pad(d)+'/'+pad(mm+1);r.children[1].innerHTML=withIc(it,it.title);
     r.onclick=()=>openDlg(it);box.appendChild(r)});
 }
 function setMode(mo,dir){
@@ -284,12 +307,14 @@ $('mname').onclick=$('yhint').onclick=()=>setMode(mode==='year'?'month':'year',m
 
 /* ---- Hộp thoại ngày ---- */
 let editing=null;
+function drawPick(){const v=$('e').value.replace(/\uFE0F/g,'');$('epick').innerHTML=PICK.map(k=>'<button type="button" class="pk'+(k.replace(/\uFE0F/g,'')===v?' on':'')+'" data-k="'+k+'">'+icon(k)+'</button>').join('')}
+$('epick').onclick=e=>{const b=e.target.closest('.pk');if(!b)return;$('e').value=b.dataset.k;drawPick()};
 function drawRems(sel){$('rems').innerHTML=REM.map(([v,l])=>'<label class="chk"><input type="checkbox" value="'+v+'"'+(sel.includes(v)?' checked':'')+'> '+l+'</label>').join('')}
 function openDlg(it,date){
   editing=it;if($('ndlg').open)$('ndlg').close();
   const n=new Date();
   $('dtitle').textContent=it?'Sửa ngày trọng đại':'Thêm ngày trọng đại';
-  $('e').value=it?ico(it):'📌';$('t').value=it?it.title:'';
+  $('e').value=it?ico(it):'📌';drawPick();$('t').value=it?it.title:'';
   $('d').value=it?it.date:(date||iso(n.getFullYear(),n.getMonth(),n.getDate()));
   $('r').checked=it?it.repeat:true;$('n').value=it?(it.note||''):'';
   drawRems(it?(it.reminders||[]):(S.set.def>=0?[S.set.def]:[]));
@@ -318,7 +343,7 @@ function drawNotifs(){
     const it=S.items.find(i=>i.id===x.mid),r=document.createElement('div');
     r.className='nrow'+(x.read?'':' unread');
     r.innerHTML='<div class="sp"><div class="t"></div><div class="d"></div></div>';
-    r.querySelector('.t').textContent=(it?ico(it):'🔔')+' '+x.body;
+    r.querySelector('.t').innerHTML=(it?icon(ico(it)):icon('bell'))+' '+esc(x.body);
     r.querySelector('.d').textContent=new Date(x.t).toLocaleString('vi-VN');
     r.onclick=()=>{x.read=true;persist();render();if(it)openDlg(it);else drawNotifs()};
     box.appendChild(r)});
@@ -360,6 +385,7 @@ $('file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileRe
     else throw 0;persist();check(true);render()}catch(x){alert('File không hợp lệ')}};r.readAsText(f)};
 
 /* ---- Khởi động ---- */
+$('acct').innerHTML=icon('cloud')+' Đăng nhập';$('bell').innerHTML=icon('bell')+'<span class="badge" id="badge" hidden></span>';$('gear').innerHTML=icon('gear');
 check(false);render();
 const tick=()=>{check(false);render()};
 setInterval(tick,60000);
@@ -385,6 +411,7 @@ const $$=id=>document.getElementById(id),btn=$$('acct');
 const app=initializeApp(firebaseConfig),
   auth=initializeAuth(app,{persistence:[indexedDBLocalPersistence,browserLocalPersistence]}),
   db=getFirestore(app);
+const setBtn=t=>{btn.innerHTML=icon('cloud')+' '+esc(t)};
 let user=null,timer=null;
 const ref=()=>doc(db,'importantDays',user.uid);
 const push=()=>setDoc(ref(),{json:JSON.stringify(S),updated:Date.now()});
@@ -395,11 +422,11 @@ async function pull(){
     if(snap.exists())applyCloud(JSON.parse(snap.data().json),first);
     if(!snap.exists()||first)await push();
     localStorage.setItem('important-days-cloud',user.uid);
-    btn.textContent='☁ Đã đồng bộ';btn.title=user.email;
-  }catch(e){console.error(e);btn.textContent='☁ Lỗi: '+(e.code||e.message);btn.title=String(e.code||e.message)}
+    setBtn('Đã đồng bộ');btn.title=user.email;
+  }catch(e){console.error(e);setBtn('Lỗi: '+(e.code||e.message));btn.title=String(e.code||e.message)}
 }
-window.cloud={save(){if(!user)return;clearTimeout(timer);timer=setTimeout(()=>push().catch(e=>{console.error(e);btn.textContent='☁ Lỗi: '+(e.code||e.message);btn.title=String(e.code||e.message)}),800)}};
-onAuthStateChanged(auth,u=>{user=u;if(u)pull();else{btn.textContent='☁ Đăng nhập';btn.title='Đồng bộ giữa các thiết bị'}});
+window.cloud={save(){if(!user)return;clearTimeout(timer);timer=setTimeout(()=>push().catch(e=>{console.error(e);setBtn('Lỗi: '+(e.code||e.message));btn.title=String(e.code||e.message)}),800)}};
+onAuthStateChanged(auth,u=>{user=u;if(u)pull();else{setBtn('Đăng nhập');btn.title='Đồng bộ giữa các thiết bị'}});
 
 const MSG={
   'auth/invalid-credential':'Sai email hoặc mật khẩu.',
