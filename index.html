@@ -117,7 +117,8 @@ button .ic{width:16px;height:16px;vertical-align:-3px}
 </dialog>
 
 <dialog id="sdlg">
-  <h3>Cài đặt thông báo</h3>
+  <h3>Cài đặt</h3>
+  <label class="chk"><input type="checkbox" id="ssnd"> Âm thanh thao tác</label>
   <label class="chk"><input type="checkbox" id="son"> Thông báo trình duyệt</label>
   <div class="warn" id="swarn" hidden></div>
   <label>Nhắc mặc định cho ngày mới</label>
@@ -147,6 +148,19 @@ const REM=[[0,'Đúng ngày'],[1,'Trước 1 ngày'],[3,'3 ngày'],[7,'7 ngày']
 let S={items:[],notifs:[],sent:{},set:{}};
 try{const r=JSON.parse(localStorage.getItem(KEY));if(r)S=Object.assign(S,r);else{const o=JSON.parse(localStorage.getItem('important-days-v2'));if(Array.isArray(o))S.items=o}}catch(e){}
 S.set=Object.assign({on:false,def:1,time:8},S.set);
+/* ---- Âm thanh (file .wav nằm cùng thư mục với index.html) ---- */
+const SND={click:'mouse-click.wav',tone:'click-tone.wav',quick:'quick.wav'},AU={};
+Object.keys(SND).forEach(k=>{try{const a=new Audio(SND[k]);a.preload='auto';a.volume=.6;AU[k]=a}catch(e){}});
+function sfx(k){
+  if(S.set.snd===false||!AU[k])return;
+  try{const a=AU[k].cloneNode();a.volume=AU[k].volume;const p=a.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}
+}
+document.addEventListener('click',e=>{
+  const t=e.target;if(!t.closest)return;
+  if(t.closest('#prev,#next,#goto,#del'))return sfx('quick');
+  if(t.closest('.pk,input[type=checkbox],select,#save,#asignin,#asignup,#readall,#mname,#yhint'))return sfx('tone');
+  if(t.closest('button,.cell:not(.blank),.chip,.up,.nrow,.lrow,.bi,.mini'))sfx('click');
+},true);
 const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(window.cloud)window.cloud.save()};
 function applyCloud(c,merge){
   const D={on:false,def:1,time:8},on=S.set.on;
@@ -205,7 +219,7 @@ function check(seed,only){
       if(now>=at&&!S.sent[k]){S.sent[k]=1;due++;ch=true}});
     if(due&&!seed){const d=left(n,t),b=msg(it,d);
       S.notifs.unshift({id:Date.now()+Math.random(),mid:it.id,body:b,t:Date.now(),read:false});
-      S.notifs=S.notifs.slice(0,100);
+      S.notifs=S.notifs.slice(0,100);sfx('tone');
       if(S.set.on&&'Notification'in window&&Notification.permission==='granted'){
         try{const x=new Notification('Ngày trọng đại',{body:ico(it)+' '+b});x.onclick=()=>{window.focus();openDlg(it);x.close()}}catch(e){}}}
   });
@@ -298,7 +312,7 @@ function setMode(mo,dir){
 let wl=0;
 $('grid').addEventListener('wheel',e=>{
   e.preventDefault();
-  const n=Date.now();if(n-wl<300||Math.abs(e.deltaY)<4)return;wl=n;
+  const n=Date.now();if(n-wl<300||Math.abs(e.deltaY)<4)return;wl=n;sfx('quick');
   const dir=e.deltaY>0?1:-1;
   view.setMonth(view.getMonth()+dir);render();
   const el=$('grid');el.classList.remove('nx','pv','zin','zout');void el.offsetWidth;el.classList.add(dir>0?'nx':'pv');
@@ -354,10 +368,12 @@ $('nclose').onclick=()=>$('ndlg').close();
 
 /* ---- Cài đặt ---- */
 function drawSet(){
+  $('ssnd').checked=S.set.snd!==false;
   $('son').checked=S.set.on;$('sdef').value=S.set.def;$('stime').value=S.set.time;
   $('stz').textContent='Múi giờ: '+Intl.DateTimeFormat().resolvedOptions().timeZone;$('swarn').hidden=true;
 }
 $('gear').onclick=()=>{drawSet();$('sdlg').showModal()};
+$('ssnd').onchange=e=>{S.set.snd=e.target.checked;persist()};
 $('sclose').onclick=()=>$('sdlg').close();
 $('sdef').onchange=e=>{S.set.def=+e.target.value;persist()};
 $('stime').onchange=e=>{S.set.time=+e.target.value;persist();check(false);render()};
