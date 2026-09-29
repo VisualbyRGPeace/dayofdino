@@ -59,24 +59,29 @@ label.chk{display:flex;gap:8px;align-items:center;color:var(--text);font-size:14
 .lrow{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--soft);cursor:pointer;font-size:14px}.lrow .dt{width:56px;color:var(--muted);flex:none}
 .zin{animation:zin .3s ease}.zout{animation:zout .3s ease}
 @keyframes zin{from{transform:scale(1.12);opacity:0}}@keyframes zout{from{transform:scale(.88);opacity:0}}
+.nx{animation:nx .25s ease}.pv{animation:pv .25s ease}
+@keyframes nx{from{transform:translateY(14px);opacity:0}}@keyframes pv{from{transform:translateY(-14px);opacity:0}}
+h1{cursor:pointer;transition:opacity .15s}h1:hover{opacity:.65}
+.yh{font-family:'Space Grotesk',Inter,sans-serif;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:8px;cursor:pointer;transition:color .15s}.yh:hover{color:var(--text)}
 [hidden]{display:none!important}
 @media(max-width:600px){.cell{min-height:64px;padding:3px}.chip{font-size:9px;padding:1px 3px}}
 </style>
 </head>
 <body>
 <main>
-  <header><h1 id="mname"></h1><div class="year" id="yname"></div></header>
+  <header><div><h1 id="mname"></h1><div class="yh" id="yhint"></div></div><div class="year" id="yname"></div></header>
   <div class="bar">
     <div class="todaytxt">Hôm nay: <b id="todaytxt"></b></div>
     <div class="nav">
+      <button id="acct" title="Đồng bộ bằng Google">☁ Đăng nhập</button>
       <button id="bell" title="Thông báo">🔔<span class="badge" id="badge" hidden></span></button>
       <button id="gear" title="Cài đặt">⚙</button>
-      <button id="mode" title="Xem cả năm">Năm</button><button id="prev">‹</button><button id="goto">Hôm nay</button><button id="next">›</button>
+      <button id="prev">‹</button><button id="goto">Hôm nay</button><button id="next">›</button>
       <button class="primary" id="add">+ Thêm</button>
     </div>
   </div>
   <div id="banner"></div>
-  <div class="note" style="margin:0 0 8px">💡 Lăn chuột xuống trên lịch để xem cả năm, lăn lên để quay lại từng tháng.</div>
+  <div class="note" style="margin:0 0 8px">Lăn chuột trên lịch để chuyển tháng.</div>
   <div class="grid" id="grid"></div><div class="ygrid" id="ygrid" hidden></div>
   <h2 id="lh"></h2><div id="lst"></div>
   <h2>Sắp tới</h2><div id="upcoming"></div>
@@ -126,7 +131,21 @@ const REM=[[0,'Đúng ngày'],[1,'Trước 1 ngày'],[3,'3 ngày'],[7,'7 ngày']
 let S={items:[],notifs:[],sent:{},set:{}};
 try{const r=JSON.parse(localStorage.getItem(KEY));if(r)S=Object.assign(S,r);else{const o=JSON.parse(localStorage.getItem('important-days-v2'));if(Array.isArray(o))S.items=o}}catch(e){}
 S.set=Object.assign({on:false,def:1,time:8},S.set);
-const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(window.cloud)window.cloud.save()};
+function applyCloud(c,merge){
+  const D={on:false,def:1,time:8},on=S.set.on;
+  if(!merge){S.items=c.items||[];S.notifs=c.notifs||[];S.sent=c.sent||{}}
+  else{
+    const ids=new Set((c.items||[]).map(i=>i.id));
+    S.items=(c.items||[]).concat(S.items.filter(i=>!ids.has(i.id)));
+    S.sent=Object.assign({},c.sent,S.sent);
+    const nid=new Set(S.notifs.map(n=>n.id));
+    S.notifs=S.notifs.concat((c.notifs||[]).filter(n=>!nid.has(n.id))).sort((a,b)=>b.t-a.t).slice(0,100);
+  }
+  S.set=Object.assign(D,c.set||{},{on});
+  try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+  render();
+}
 
 const pad=n=>String(n).padStart(2,'0'),iso=(y,m,d)=>y+'-'+pad(m+1)+'-'+pad(d);
 const parse=s=>{const[y,m,d]=s.split('-').map(Number);return{y,m:m-1,d}};
@@ -205,7 +224,7 @@ function render(){
 let mode='month';
 function extra(t){
   const y=view.getFullYear(),m=view.getMonth(),yr=mode==='year';
-  $('grid').hidden=yr;$('ygrid').hidden=!yr;$('mode').textContent=yr?'Tháng':'Năm';
+  $('grid').hidden=yr;$('ygrid').hidden=!yr;$('yhint').textContent=yr?'Quay lại tháng ▴':'Xem cả năm ▾';$('mname').title=yr?'Quay lại tháng':'Xem cả năm';
   if(yr){
     $('mname').textContent='Cả năm';
     const yg=$('ygrid');yg.innerHTML='';
@@ -244,17 +263,14 @@ function setMode(mo,dir){
   el.classList.remove('zin','zout');void el.offsetWidth;el.classList.add(dir==='in'?'zin':'zout');
 }
 let wl=0;
-const wheel=e=>{
-  const up=e.deltaY<0;
-  if((mode==='month'&&!up)||(mode==='year'&&up)){
-    e.preventDefault();
-    const n=Date.now();if(n-wl<450)return;wl=n;
-    if(mode==='year'){const mi=e.target.closest&&e.target.closest('.mini');if(mi)view=new Date(view.getFullYear(),+mi.dataset.m,1)}
-    setMode(mode==='month'?'year':'month',mode==='month'?'out':'in');
-  }
-};
-['grid','ygrid'].forEach(id=>$(id).addEventListener('wheel',wheel,{passive:false}));
-$('mode').onclick=()=>setMode(mode==='year'?'month':'year',mode==='year'?'in':'out');
+$('grid').addEventListener('wheel',e=>{
+  e.preventDefault();
+  const n=Date.now();if(n-wl<300||Math.abs(e.deltaY)<4)return;wl=n;
+  const dir=e.deltaY>0?1:-1;
+  view.setMonth(view.getMonth()+dir);render();
+  const el=$('grid');el.classList.remove('nx','pv','zin','zout');void el.offsetWidth;el.classList.add(dir>0?'nx':'pv');
+},{passive:false});
+$('mname').onclick=$('yhint').onclick=()=>setMode(mode==='year'?'month':'year',mode==='year'?'in':'out');
 
 /* ---- Hộp thoại ngày ---- */
 let editing=null;
@@ -339,6 +355,49 @@ const tick=()=>{check(false);render()};
 setInterval(tick,60000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick()});
 if(location.hash.startsWith('#m-')){const it=S.items.find(i=>'m-'+i.id===location.hash.slice(1));if(it)openDlg(it)}
+</script>
+
+<script type="module">
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {getFirestore,doc,getDoc,setDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+/* === firebaseConfig CỦA BẠN === */
+const firebaseConfig={
+  apiKey:"AIzaSyDrvDSXMpGqFvivC8z6ES3TVHpNSaMF23s",
+  authDomain:"data-5f418.firebaseapp.com",
+  projectId:"data-5f418",
+  storageBucket:"data-5f418.firebasestorage.app",
+  messagingSenderId:"985912551505",
+  appId:"1:985912551505:web:c0ac18e2a9dcf73f2af070"
+};
+
+const btn=document.getElementById('acct');
+if(!firebaseConfig.apiKey||firebaseConfig.apiKey.startsWith('DÁN')){
+  btn.textContent='☁ Chưa cấu hình';btn.title='Dán firebaseConfig vào index.html để bật đồng bộ';btn.disabled=true;
+}else{
+  const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+  let user=null,timer=null;
+  const ref=()=>doc(db,'importantDays',user.uid);
+  const push=()=>setDoc(ref(),{json:JSON.stringify(S),updated:Date.now()});
+  async function pull(){
+    if(!user)return;
+    try{
+      const snap=await getDoc(ref()),first=localStorage.getItem('important-days-cloud')!==user.uid;
+      if(snap.exists())applyCloud(JSON.parse(snap.data().json),first);
+      if(!snap.exists()||first)await push();
+      localStorage.setItem('important-days-cloud',user.uid);
+      btn.textContent='☁ '+(user.displayName||user.email||'Đã đồng bộ').split(' ').pop();
+    }catch(e){console.error(e);btn.textContent='☁ Lỗi đồng bộ';btn.title=String(e.code||e.message)}
+  }
+  window.cloud={save(){if(!user)return;clearTimeout(timer);timer=setTimeout(()=>push().catch(e=>{console.error(e);btn.textContent='☁ Lỗi đồng bộ'}),800)}};
+  onAuthStateChanged(auth,u=>{user=u;if(u)pull();else btn.textContent='☁ Đăng nhập'});
+  btn.onclick=async()=>{
+    if(user){if(confirm('Đăng xuất? Dữ liệu vẫn được giữ trên đám mây và trong máy này.'))signOut(auth);return}
+    try{await signInWithPopup(auth,new GoogleAuthProvider())}catch(e){alert('Đăng nhập không thành công: '+(e.code||e.message))}
+  };
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
+}
 </script>
 </body>
 </html>
